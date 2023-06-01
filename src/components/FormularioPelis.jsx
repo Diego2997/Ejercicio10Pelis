@@ -1,13 +1,36 @@
-import { Form,Button, Container, Alert } from "react-bootstrap";
+import { Form,Button, Container, Alert,Spinner } from "react-bootstrap";
 import ListaPelis from "./ListaPelis";
 import {useForm} from 'react-hook-form'
+import { useState,useEffect } from "react";
+import Swal from 'sweetalert2'
 
 const FormularioPelis = () => {
-    const {register,handleSubmit,formState:{errors}} = useForm()
+    const peliculasLocalStorage = JSON.parse(localStorage.getItem("listaPeliculas")) || []
+    const [peliculas,setPeliculas] = useState(peliculasLocalStorage)
+    const [isloading,setIsLoading] = useState(false)
+    const {register,handleSubmit,formState:{errors},reset} = useForm()
 
+    useEffect(()=>{
+    localStorage.setItem("listaPeliculas",JSON.stringify(peliculas))
+    },[peliculas])
 
     const onSubmit=(data)=>{
-        console.log(data)
+      setIsLoading(true)
+      setTimeout(() => {
+        setPeliculas([...peliculas,data])
+        setIsLoading(false)
+         reset()
+         Swal.fire(
+          'Pelicula creada!',
+          'La pelicula fue correctamente creada!',
+          'success'
+        )
+      }, 2000);
+    }
+
+    const borrarPelicula =(nombrePeli) =>{
+      const peliculaFiltrada = peliculas.filter(pelicula => pelicula.nombre !== nombrePeli)
+      setPeliculas(peliculaFiltrada)
     }
     return (
         <>
@@ -53,14 +76,12 @@ const FormularioPelis = () => {
       {errors?.descripcion && <Alert variant="danger">{errors.descripcion?.message}La descripción como minimo 10 caracteres y como maximo 300</Alert>}
       {errors?.genero && <Alert variant="danger">{errors.genero?.message}</Alert>}
        <div className="text-center">
-       <Button variant="danger" type="submit">
-          Enviar
-        </Button>
+       {isloading ? <Spinner animation="border" variant="danger" /> : <Button variant="danger" type="submit">Enviar</Button>}
        </div>
         <hr />
       </Form>
         </Container>
-      <ListaPelis/>
+      {peliculas ? <ListaPelis peliculas={peliculas} borrarPelicula={borrarPelicula}/> : <Alert variant="danger">No hay peliculas para mostrar</Alert>}
       </>
     );
 };
